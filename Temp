@@ -1,58 +1,25 @@
 <script>
 async function fetchMatches() {
-  // AllOrigins proxy
-  const proxy = "https://api.allorigins.win/get?url=";
-  const targetURL = encodeURIComponent("https://oddspedia.com/tennis");
+  const apiURL = "https://your-repl-name.username.repl.co/matches"; // <-- replace with your server URL
 
   try {
-    const response = await fetch(proxy + targetURL);
-    const data = await response.json();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(data.contents, "text/html");
+    const response = await fetch(apiURL);
+    const matches = await response.json();
 
-    const rows = doc.querySelectorAll(".eventRow");
     const tbody = document.getElementById("matchesBody");
-    tbody.innerHTML = ""; // clear loading
+    tbody.innerHTML = "";
 
-    const today = new Date();
-    const tomorrow = new Date();
-    tomorrow.setDate(today.getDate() + 1);
-
-    let count = 0;
-
-    rows.forEach(row => {
-      const dateStr = row.querySelector(".eventRow__date")?.textContent.trim();
-      const players = row.querySelector(".eventRow__name")?.textContent.trim();
-      const event = row.querySelector(".eventRow__tournament")?.textContent.trim() || "Unknown";
-      const time = row.querySelector(".eventRow__time")?.textContent.trim() || "TBD";
-      const oddsCells = row.querySelectorAll(".oddsCell__odd");
-      if (!players || oddsCells.length < 2 || !dateStr) return;
-
-      // Only today or tomorrow
-      const matchDate = new Date(dateStr + " 2026"); // adjust year if needed
-      if (matchDate.toDateString() !== today.toDateString() &&
-          matchDate.toDateString() !== tomorrow.toDateString()) return;
-
-      const d1 = parseFloat(oddsCells[0].textContent.trim());
-      const d2 = parseFloat(oddsCells[1].textContent.trim());
-      if (isNaN(d1) || isNaN(d2)) return;
-
-      const a1 = d1 >= 2 ? Math.round((d1-1)*100) : Math.round(-100/(d1-1));
-      const a2 = d2 >= 2 ? Math.round((d2-1)*100) : Math.round(-100/(d2-1));
-      const favorite = Math.abs(a1) < Math.abs(a2) ? a1 : a2;
-
-      if (favorite <= -2000) {
-        const tr = document.createElement("tr");
-        const favClass = favorite <= -3000 ? "highlight" : "";
-        tr.innerHTML = `<td>${dateStr}</td><td>${event}</td><td>${time}</td><td>${players}</td><td class="${favClass}">${favorite}</td>`;
-        tbody.appendChild(tr);
-        count++;
-      }
-    });
-
-    if (count === 0) {
+    if (!matches.length) {
       tbody.innerHTML = `<tr><td colspan="5">No matches found for today or tomorrow with favorites ≤ -2000</td></tr>`;
+      return;
     }
+
+    matches.forEach(m => {
+      const tr = document.createElement("tr");
+      const favClass = m.favorite <= -3000 ? "highlight" : "";
+      tr.innerHTML = `<td>${m.date}</td><td>${m.event}</td><td>${m.time}</td><td>${m.match}</td><td class="${favClass}">${m.favorite}</td>`;
+      tbody.appendChild(tr);
+    });
 
   } catch (err) {
     document.getElementById("matchesBody").innerHTML = `<tr><td colspan="5">Error fetching data: ${err}</td></tr>`;
