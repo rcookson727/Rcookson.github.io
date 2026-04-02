@@ -36,14 +36,15 @@
 
 <script>
 async function fetchMatches() {
+  // AllOrigins proxy
   const proxy = "https://api.allorigins.win/get?url=";
-  const url = encodeURIComponent("https://oddspedia.com/tennis");
-  
+  const targetURL = encodeURIComponent("https://oddspedia.com/tennis");
+
   try {
-    const response = await fetch(proxy + url);
-    const textData = await response.json();
+    const response = await fetch(proxy + targetURL);
+    const data = await response.json();
     const parser = new DOMParser();
-    const doc = parser.parseFromString(textData.contents, "text/html");
+    const doc = parser.parseFromString(data.contents, "text/html");
 
     const rows = doc.querySelectorAll(".eventRow");
     const tbody = document.getElementById("matchesBody");
@@ -63,8 +64,8 @@ async function fetchMatches() {
       const oddsCells = row.querySelectorAll(".oddsCell__odd");
       if (!players || oddsCells.length < 2 || !dateStr) return;
 
-      // parse date string (assumes format like "Apr 2, 2026")
-      const matchDate = new Date(dateStr + " 2026"); // year placeholder, may adjust
+      // Only today or tomorrow
+      const matchDate = new Date(dateStr + " 2026"); // adjust year if needed
       if (matchDate.toDateString() !== today.toDateString() &&
           matchDate.toDateString() !== tomorrow.toDateString()) return;
 
